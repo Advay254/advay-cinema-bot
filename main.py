@@ -2,6 +2,11 @@ import os
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, CallbackQueryHandler
 from pymongo import MongoClient
+from flask import Flask
+import threading
+
+app = Flask(__name__)
+port = int(os.environ.get("PORT", 8080))
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 MONGO_URI = os.environ.get('MONGO_URI')
@@ -10,6 +15,10 @@ CHANNEL_ID = os.environ.get('CHANNEL_ID')
 client = MongoClient(MONGO_URI)
 db = client.filebot
 files_collection = db.files
+
+@app.route('/')
+def home():
+    return "Bot is running!"
 
 def main_menu_keyboard():
     keyboard = [
@@ -94,6 +103,17 @@ def button_callback(update: Update, context: CallbackContext) -> None:
         query.edit_message_text(
             text="❓ How to Download\n\n1. Search for your content using /search\n2. Click on the download button\n3. The file will be sent to you directly\n\nFor any issues, contact @admin"
         )
+    elif query.data.startswith('download_'):
+        file_id = query.data.split('_')[1]
+        file_info = files_collection.find_one({'file_id': file_id})
+        if file_info:
+            context.bot.send_document(
+                chat_id=query.message.chat_id,
+                document=file_id,
+                caption=f"📥 Here's your file: {file_info['file_name']}"
+            )
+        else:
+            query.edit_message_text('❌ Sorry, file not found.')
 
 def search_files(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -152,6 +172,11 @@ def main() -> None:
     dispatcher.add_handler(MessageHandler(Filters.document, store_file))
     dispatcher.add_handler(CallbackQueryHandler(button_callback))
 
+    def run_flask():
+        app.run(host='0.0.0.0', port=port)
+
+    threading.Thread(target=run_flask).start()
+    
     updater.start_polling()
     updater.idle()
 
