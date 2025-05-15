@@ -1,12 +1,11 @@
-python
 import os
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, CallbackQueryHandler
 from pymongo import MongoClient
 
-BOT_TOKEN = "7775381590:AAH07liZHJh34erTlP4hoiHaHBcnp_NVONY"
-MONGO_URI = "mongodb+srv://AdvayCinema:0795476799Chill.@cluster0.wgmgdaz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-CHANNEL_ID = "-1002640159314"
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
+MONGO_URI = os.environ.get('MONGO_URI')
+CHANNEL_ID = os.environ.get('CHANNEL_ID')
 
 client = MongoClient(MONGO_URI)
 db = client.filebot
